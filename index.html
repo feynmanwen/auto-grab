@@ -174,6 +174,50 @@
     </div>
   </section>
 
+  <!-- Video Demo Showcase Section -->
+  <section class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-2">
+    <div class="bg-[#111927] border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold font-mono">DEMO VIDEO</span>
+            <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="play-circle" class="w-5 h-5 text-emerald-400"></i>
+              系統完整使用與操作示範影片
+            </h2>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            28 秒完整展示：自由框選 ROI、設定關鍵字、RapidOCR 辨識命中、自動滑鼠點選與批次多步驟工作流
+          </p>
+        </div>
+        <!-- Video / GIF Toggle Buttons -->
+        <div class="flex items-center gap-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+          <button id="btn-show-video" onclick="toggleMediaMode('video')" class="py-1.5 px-3 rounded-lg bg-emerald-600 text-white font-semibold transition flex items-center gap-1.5">
+            <i data-lucide="video" class="w-3.5 h-3.5"></i>
+            <span>1080p MP4 影片</span>
+          </button>
+          <button id="btn-show-gif" onclick="toggleMediaMode('gif')" class="py-1.5 px-3 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="image" class="w-3.5 h-3.5"></i>
+            <span>動態展示 GIF</span>
+          </button>
+          <a href="docs/demo.mp4" download class="py-1.5 px-3 rounded-lg text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>下載</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Player Container -->
+      <div class="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl aspect-video max-h-[600px] flex items-center justify-center">
+        <video id="demo-video-player" class="w-full h-full object-contain" controls autoplay loop muted playsinline poster="docs/demo.gif">
+          <source src="docs/demo.mp4" type="video/mp4">
+          您的瀏覽器不支援 HTML5 Video，請下載觀看。
+        </video>
+        <img id="demo-gif-player" src="docs/demo.gif" alt="auto-grab 使用示範動態圖" class="w-full h-full object-contain hidden">
+      </div>
+    </div>
+  </section>
+
   <!-- Main Interactive Console Section -->
   <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-4 flex-1 flex flex-col gap-6">
 
@@ -1075,6 +1119,27 @@
       }
 
       animId = requestAnimationFrame(render);
+    }
+
+    // Media Toggle (Video / GIF)
+    function toggleMediaMode(mode) {
+      const vid = document.getElementById('demo-video-player');
+      const gif = document.getElementById('demo-gif-player');
+      const btnVid = document.getElementById('btn-show-video');
+      const btnGif = document.getElementById('btn-show-gif');
+      if (mode === 'video') {
+        vid.classList.remove('hidden');
+        gif.classList.add('hidden');
+        vid.play().catch(() => {});
+        btnVid.className = 'py-1.5 px-3 rounded-lg bg-emerald-600 text-white font-semibold transition flex items-center gap-1.5';
+        btnGif.className = 'py-1.5 px-3 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5';
+      } else {
+        vid.pause();
+        vid.classList.add('hidden');
+        gif.classList.remove('hidden');
+        btnGif.className = 'py-1.5 px-3 rounded-lg bg-emerald-600 text-white font-semibold transition flex items-center gap-1.5';
+        btnVid.className = 'py-1.5 px-3 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5';
+      }
     }
 
     // Start Animation Loop

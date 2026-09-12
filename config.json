@@ -1,11 +1,12 @@
 {
-    "roi_x": 981,
-    "roi_y": 1024,
-    "roi_w": 76,
-    "roi_h": 33,
+    "roi_x": 850,
+    "roi_y": 520,
+    "roi_w": 320,
+    "roi_h": 85,
     "roi_configured": true,
     "keywords": [
-        "Submit"
+        "Submit",
+        "確定"
     ],
     "match_mode": "contains",
     "confidence_threshold": 0.6,

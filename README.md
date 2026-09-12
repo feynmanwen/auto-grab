@@ -1,6 +1,22 @@
 # 自動文字偵測點選工具 (Screen OCR AutoClicker / auto-grab)
 
-> 🌐 **線上即時展示看板 (Live Demo Showcase)**：[https://feynmanwen.github.io/auto-grab/](https://feynmanwen.github.io/auto-grab/)
+> 🌐 **線上即時展示看板 (Live Demo Showcase)**：[https://feynmanwen.github.io/auto-grab/](https://feynmanwen.github.io/auto-grab/)  
+> 🎬 **操作示範影片 (1080p MP4)**：[docs/demo.mp4](docs/demo.mp4)
+
+---
+
+## 🎬 系統操作與使用示範 (Demo Preview)
+
+![auto-grab 智慧文字偵測自動點選操作示範](docs/demo.gif)
+
+> 💡 **示範流程包含**：
+> 1. **自由框選 ROI**：全螢幕半透明遮罩拖曳選取目標按鈕，座標尺寸即刻自動同步。
+> 2. **設定關鍵字與準心**：輸入目標文字，右側即時呈現高對比度瞄準準心與螢幕物理座標。
+> 3. **高速離線辨識與自動點選**：RapidOCR 26ms 毫秒級定位文字，滑鼠平滑移動並自動執行點擊。
+> 4. **批次多步驟自動化工作流**：依序執行登入、同意條款、送出申請之多步驟連續流程。
+> 5. **全域安全防護**：F8 瞬間緊急停止與 (0, 0) 邊界角落防呆機制。
+
+---
 
 這是一款專為 Windows PC 設計的自動文字辨識與滑鼠點擊工具。支援**「單一區域模式」**與全新**「批次多步驟模式」**。允許使用者自由框選螢幕上的感興趣區域 (ROI)，利用本機離線 RapidOCR 引擎即時辨識目標文字，並在文字出現時自動將滑鼠游標精準移至文字中心，執行左鍵單擊或雙擊。
 
