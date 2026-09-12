@@ -52,8 +52,10 @@ class MainWindow(QMainWindow):
         self.preview_timer.timeout.connect(self._do_refresh_single_preview)
 
         # 初始化介面
+        self._is_loading_config = True
         self._init_ui()
         self._load_config_to_ui()
+        self._is_loading_config = False
         self._setup_global_hotkey()
 
         # 啟動時立即擷取並預覽一次
@@ -383,6 +385,8 @@ class MainWindow(QMainWindow):
     # -------------------------------------------------------------
     def _on_single_param_changed(self):
         """當調整 X, Y, W, H 或點擊偏移時，觸發延遲刷新，避免頻繁呼叫"""
+        if getattr(self, "_is_loading_config", False):
+            return
         self._save_ui_to_config()
         self.preview_timer.start()
 
@@ -695,6 +699,8 @@ class MainWindow(QMainWindow):
         self._update_batch_table()
 
     def _save_ui_to_config(self):
+        if getattr(self, "_is_loading_config", False):
+            return
         self.config.roi_x = self.spin_roi_x.value()
         self.config.roi_y = self.spin_roi_y.value()
         self.config.roi_w = self.spin_roi_w.value()
