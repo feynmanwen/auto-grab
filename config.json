@@ -1,14 +1,11 @@
 {
-    "roi_x": 100,
-    "roi_y": 100,
-    "roi_w": 500,
-    "roi_h": 300,
+    "roi_x": 981,
+    "roi_y": 1024,
+    "roi_w": 76,
+    "roi_h": 33,
     "roi_configured": true,
     "keywords": [
-        "確定",
-        "送出",
-        "OK",
-        "立即領取"
+        "Submit"
     ],
     "match_mode": "contains",
     "confidence_threshold": 0.6,
