@@ -7,10 +7,11 @@ from PIL import Image, ImageGrab
 
 try:
     from PySide6.QtWidgets import QApplication
-    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtGui import QGuiApplication, QImage
 except ImportError:
     QApplication = None
     QGuiApplication = None
+    QImage = None
 
 
 def ensure_desktop_access():
@@ -72,21 +73,37 @@ def capture_roi(
     phys_w = int(round(roi_w * dpr))
     phys_h = int(round(roi_h * dpr))
 
-    # 1. 使用 PIL.ImageGrab
+    # 1. 優先使用 Qt 原生 QScreen.grabWindow (高 DPI 零失真、避開 BitBlt 權限阻擋)
+    if QGuiApplication is not None:
+        try:
+            screen = QGuiApplication.primaryScreen()
+            if screen:
+                pixmap = screen.grabWindow(0, roi_x, roi_y, roi_w, roi_h)
+                if not pixmap.isNull():
+                    qimg = pixmap.toImage().convertToFormat(QImage.Format.Format_RGB888)
+                    width = qimg.width()
+                    height = qimg.height()
+                    ptr = qimg.bits()
+                    img = Image.frombuffer("RGB", (width, height), ptr, "raw", "RGB", 0, 1)
+                    return img, (phys_x, phys_y, width, height)
+        except Exception:
+            pass
+
+    # 2. 次選方案：使用 PIL.ImageGrab
     bbox = (phys_x, phys_y, phys_x + phys_w, phys_y + phys_h)
     try:
-        img = ImageGrab.grab(bbox=bbox, all_screens=True)
+        img = ImageGrab.grab(bbox=bbox)
         if img:
             return img, (phys_x, phys_y, phys_w, phys_h)
     except Exception:
         try:
-            img = ImageGrab.grab(bbox=bbox)
+            img = ImageGrab.grab(bbox=bbox, all_screens=True)
             if img:
                 return img, (phys_x, phys_y, phys_w, phys_h)
         except Exception:
             pass
 
-    # 2. 備援方案：使用 mss 擷取
+    # 3. 備援方案：使用 mss 擷取
     try:
         import mss
         with mss.mss() as sct:
