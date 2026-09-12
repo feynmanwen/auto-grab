@@ -1,0 +1,40 @@
+{
+    "roi_x": 955,
+    "roi_y": 0,
+    "roi_w": 10,
+    "roi_h": 10,
+    "roi_configured": true,
+    "keywords": [],
+    "match_mode": "contains",
+    "confidence_threshold": 0.6,
+    "mouse_action": "single_click",
+    "click_offset_x": 0,
+    "click_offset_y": 0,
+    "restore_cursor": false,
+    "move_duration": 0.1,
+    "loop_mode": false,
+    "cooldown_seconds": 3.0,
+    "scan_interval": 1.0,
+    "batch_steps": [
+        {
+            "id": "7918055f",
+            "name": "Step 1",
+            "roi_x": 100,
+            "roi_y": 100,
+            "roi_w": 200,
+            "roi_h": 100,
+            "keywords": [
+                "OK"
+            ],
+            "match_mode": "contains",
+            "confidence_threshold": 0.6,
+            "mouse_action": "single_click",
+            "click_offset_x": 0,
+            "click_offset_y": 0,
+            "post_delay": 1.0,
+            "timeout_seconds": 30.0
+        }
+    ],
+    "batch_loop": false,
+    "batch_cooldown": 2.0
+}
