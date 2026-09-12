@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>auto-grab | Screen OCR AutoClicker 智慧文字辨識自動點選系統 - 線上公開看板</title>
+  <meta name="description" content="專為 Windows PC 設計之輕量、高精度自動文字辨識與滑鼠點擊工具。支援單一 ROI 與批次多步驟工作流，內建離線 RapidOCR ONNX 引擎與 F8 全域防護。">
+
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+            cyber: {
+              blue: '#38bdf8',
+              cyan: '#06b6d4',
+              violet: '#818cf8',
+              amber: '#f59e0b',
+              dark: '#0b0f19',
+              card: '#111827',
+              border: '#1f293d'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .font-mono {
+      font-family: 'Fira Code', monospace;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+    .animate-pulse-glow {
+      animation: pulse-glow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-black">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-50 bg-[#0c121e]/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-all">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <!-- Brand & Version -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 p-[2px] shadow-lg shadow-emerald-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <i data-lucide="crosshair" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">auto-grab</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">v1.2.0-batch</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Screen OCR AutoClicker 智慧文字辨識自動點選看板</p>
+        </div>
+      </div>
+
+      <!-- Live Status Badge & External Links -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div id="system-status-pill" class="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-emerald-500/30 text-xs font-mono text-emerald-400 shadow-sm shadow-emerald-500/10">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span id="system-status-text">系統就緒 (Standby)</span>
+        </div>
+
+        <a href="https://github.com/feynmanwen/auto-grab" target="_blank" rel="noopener noreferrer" 
+           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs sm:text-sm font-medium text-slate-200 border border-slate-700 transition shadow">
+          <i data-lucide="github" class="w-4 h-4 text-white"></i>
+          <span class="hidden md:inline">GitHub 倉庫</span>
+        </a>
+
+        <button onclick="copyCloneCommand()" 
+           class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-xs sm:text-sm font-medium text-emerald-300 border border-emerald-500/30 transition">
+          <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+          <span>git clone 指令</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero & Metric Summary Bar -->
+  <section class="max-w-7xl mx-auto w-full px-4 lg:px-8 pt-6 pb-2">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <!-- Metric 1 -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-[#111927]/80 border border-slate-800/90 shadow-sm relative overflow-hidden group hover:border-emerald-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">OCR 辨識核心</span>
+          <i data-lucide="cpu" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-lg sm:text-xl font-bold text-white">RapidOCR</span>
+          <span class="text-xs text-emerald-400 font-mono">ONNX 離線</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">繁簡中/英/數免雲端推論</p>
+      </div>
+
+      <!-- Metric 2 -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-[#111927]/80 border border-slate-800/90 shadow-sm relative overflow-hidden group hover:border-cyan-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">即時平均延遲</span>
+          <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span id="metric-latency" class="text-lg sm:text-xl font-bold text-white font-mono">58 ms</span>
+          <span class="text-xs text-cyan-400 font-mono">極低延遲</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">mss 螢幕記憶體截圖管線</p>
+      </div>
+
+      <!-- Metric 3 -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-[#111927]/80 border border-slate-800/90 shadow-sm relative overflow-hidden group hover:border-amber-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">全域緊急防護</span>
+          <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-lg sm:text-xl font-bold text-amber-300 font-mono">F8 熱鍵</span>
+          <span class="text-xs text-amber-400/90 font-mono">(0,0) 角落防呆</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">硬體級瞬間奪回滑鼠控制權</p>
+      </div>
+
+      <!-- Metric 4 -->
+      <div class="p-3.5 sm:p-4 rounded-xl bg-[#111927]/80 border border-slate-800/90 shadow-sm relative overflow-hidden group hover:border-indigo-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">點擊命中統計</span>
+          <i data-lucide="target" class="w-4 h-4 text-indigo-400"></i>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span id="metric-clicks" class="text-lg sm:text-xl font-bold text-indigo-300 font-mono">0</span>
+          <span class="text-xs text-slate-400">次點擊</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">準心座標偏差值 0 像素</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Interactive Console Section -->
+  <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-4 flex-1 flex flex-col gap-6">
+
+    <!-- Split View: Configurator & Live Simulation Screen -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Control Panel & Settings (5 Cols) -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="bg-[#111927] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+          
+          <!-- Mode Tabs -->
+          <div class="flex items-center p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs sm:text-sm font-medium">
+            <button id="tab-single-mode" onclick="switchMode('single')" 
+                    class="flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 bg-emerald-600 text-white shadow font-semibold transition">
+              <i data-lucide="crosshair" class="w-4 h-4"></i>
+              <span>單一區域模式</span>
+            </button>
+            <button id="tab-batch-mode" onclick="switchMode('batch')" 
+                    class="flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-slate-400 hover:text-white transition">
+              <i data-lucide="list-ordered" class="w-4 h-4"></i>
+              <span>批次多步驟工作流</span>
+            </button>
+          </div>
+
+          <!-- Single Mode Form View -->
+          <div id="panel-single-mode" class="flex flex-col gap-4">
+            <!-- Target Keywords -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>目標文字關鍵字 (以逗號分隔)</span>
+                <span class="text-[11px] text-emerald-400 font-mono">可輸入多詞</span>
+              </label>
+              <div class="relative">
+                <input type="text" id="target-keywords" value="立即領取, 確定, 登入, 送出" 
+                       class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition font-mono pr-8">
+                <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute right-2.5 top-2.5"></i>
+              </div>
+            </div>
+
+            <!-- Match Mode & Click Action -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">文字比對模式</label>
+                <select id="match-mode" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                  <option value="contains" selected>包含關鍵字 (模糊比對)</option>
+                  <option value="exact">完全一致 (精準比對)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">滑鼠點擊動作</label>
+                <select id="mouse-action" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                  <option value="single_click" selected>左鍵單擊 (Single Click)</option>
+                  <option value="double_click">左鍵雙擊 (Double Click)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- ROI Coordinates Adjuster -->
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <i data-lucide="scan" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>感興趣區域座標 (ROI)</span>
+                </span>
+                <button onclick="resetRoi()" class="text-[11px] text-slate-400 hover:text-emerald-400 underline transition">預設居中</button>
+              </div>
+              <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                <div>
+                  <span class="text-[10px] text-slate-500 block mb-0.5">X 座標</span>
+                  <input type="number" id="roi-x" value="120" min="0" max="500" 
+                         onchange="updateRoiFromInputs()" class="w-full bg-slate-950 border border-slate-700/80 rounded px-1.5 py-1 text-center text-emerald-400 font-mono">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block mb-0.5">Y 座標</span>
+                  <input type="number" id="roi-y" value="100" min="0" max="300" 
+                         onchange="updateRoiFromInputs()" class="w-full bg-slate-950 border border-slate-700/80 rounded px-1.5 py-1 text-center text-emerald-400 font-mono">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block mb-0.5">寬度 W</span>
+                  <input type="number" id="roi-w" value="440" min="100" max="600" 
+                         onchange="updateRoiFromInputs()" class="w-full bg-slate-950 border border-slate-700/80 rounded px-1.5 py-1 text-center text-emerald-400 font-mono">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block mb-0.5">高度 H</span>
+                  <input type="number" id="roi-h" value="280" min="100" max="400" 
+                         onchange="updateRoiFromInputs()" class="w-full bg-slate-950 border border-slate-700/80 rounded px-1.5 py-1 text-center text-emerald-400 font-mono">
+                </div>
+              </div>
+            </div>
+
+            <!-- Detection Confidence & Cooldown Sliders -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="text-slate-400">信心門檻</span>
+                  <span id="val-confidence" class="text-emerald-400 font-mono">0.65</span>
+                </div>
+                <input type="range" id="slider-confidence" min="0.5" max="0.95" step="0.05" value="0.65"
+                       oninput="document.getElementById('val-confidence').innerText = this.value"
+                       class="w-full accent-emerald-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="text-slate-400">點擊後冷卻</span>
+                  <span id="val-cooldown" class="text-emerald-400 font-mono">2.0 秒</span>
+                </div>
+                <input type="range" id="slider-cooldown" min="0.5" max="5.0" step="0.5" value="2.0"
+                       oninput="document.getElementById('val-cooldown').innerText = this.value + ' 秒'"
+                       class="w-full accent-emerald-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Mode View (Hidden by Default) -->
+          <div id="panel-batch-mode" class="hidden flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-300">批次工作流步驟序列</span>
+              <span class="text-[11px] text-slate-400 font-mono">4 個預設步驟</span>
+            </div>
+
+            <!-- Workflow Step List -->
+            <div class="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1" id="batch-step-container">
+              <!-- Step 1 -->
+              <div id="step-row-1" class="p-2.5 rounded-lg bg-slate-900 border border-emerald-500/50 flex items-center justify-between text-xs transition">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[11px]">1</span>
+                  <div>
+                    <div class="font-semibold text-white">點擊「登入」帳號</div>
+                    <div class="text-[10px] text-slate-400">關鍵字: 登入 | 單擊 | 延遲 1.0s</div>
+                  </div>
+                </div>
+                <span class="step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">準備中</span>
+              </div>
+
+              <!-- Step 2 -->
+              <div id="step-row-2" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs transition">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[11px]">2</span>
+                  <div>
+                    <div class="font-semibold text-slate-200">點擊「同意服務規範」</div>
+                    <div class="text-[10px] text-slate-400">關鍵字: 同意 | 單擊 | 延遲 1.0s</div>
+                  </div>
+                </div>
+                <span class="step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">等待</span>
+              </div>
+
+              <!-- Step 3 -->
+              <div id="step-row-3" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs transition">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[11px]">3</span>
+                  <div>
+                    <div class="font-semibold text-slate-200">點擊「立即領取」獎勵</div>
+                    <div class="text-[10px] text-slate-400">關鍵字: 立即領取 | 雙擊 | 延遲 1.5s</div>
+                  </div>
+                </div>
+                <span class="step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">等待</span>
+              </div>
+
+              <!-- Step 4 -->
+              <div id="step-row-4" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs transition">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[11px]">4</span>
+                  <div>
+                    <div class="font-semibold text-slate-200">點擊「確定」關閉視窗</div>
+                    <div class="text-[10px] text-slate-400">關鍵字: 確定 | 單擊 | 延遲 1.0s</div>
+                  </div>
+                </div>
+                <span class="step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">等待</span>
+              </div>
+            </div>
+
+            <!-- Loop toggle -->
+            <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-xs">
+              <span class="text-slate-300">循環整批步驟 (Continuous Loop)</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="batch-loop-toggle" checked class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Action Buttons Group -->
+          <div class="pt-2 border-t border-slate-800/80 flex flex-col gap-2.5">
+            <div class="grid grid-cols-2 gap-2.5">
+              <button id="btn-toggle-run" onclick="toggleAutomation()" 
+                      class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition transform active:scale-95">
+                <i data-lucide="play" id="btn-toggle-icon" class="w-4 h-4 fill-current"></i>
+                <span id="btn-toggle-text">啟動自動監控</span>
+              </button>
+
+              <button onclick="emergencyStop()" 
+                      class="py-2.5 px-4 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-600/40 font-bold text-sm flex items-center justify-center gap-2 transition transform active:scale-95">
+                <i data-lucide="octagon-alert" class="w-4 h-4 text-rose-400"></i>
+                <span>緊急停止 (F8)</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <button onclick="triggerSingleScan()" 
+                      class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>單次觸發辨識</span>
+              </button>
+
+              <button onclick="switchMockScene()" 
+                      class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>變換測試畫面</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Architecture & Features Card -->
+        <div class="bg-[#111927]/60 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400 flex flex-col gap-2">
+          <div class="font-semibold text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-emerald-400"></i>
+            <span>設計架構與關鍵技術</span>
+          </div>
+          <p class="leading-relaxed">
+            以 <strong class="text-slate-200">PySide6 (Qt)</strong> 構建 GUI 與半透明螢幕遮罩，結合 <strong class="text-slate-200">mss</strong> 零延遲記憶體截圖與 <strong class="text-slate-200">RapidOCR</strong> 離線神經網路，命中目標後透過 <strong class="text-slate-200">Win32 SendInput / PyAutoGUI</strong> 模擬硬體級滑鼠事件，徹底解決介面反作弊與焦點漂移問題。
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Screen & Reticle Canvas (7 Cols) -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        <div class="bg-[#111927] border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+          
+          <!-- Canvas Header & Coordinates Info -->
+          <div class="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-800/80 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="monitor" class="w-4 h-4 text-cyan-400"></i>
+                <span>即時畫面模擬與高對比準心 (Live Screen & Reticle)</span>
+              </span>
+              <span id="scene-badge" class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-[10px]">場景: 領券搶拍系統</span>
+            </div>
+
+            <div class="flex items-center gap-3 font-mono text-slate-400 text-[11px]">
+              <span id="target-coords-display">準心座標: <strong class="text-emerald-400">(X: 0, Y: 0)</strong></span>
+              <span class="hidden sm:inline">FPS: <strong class="text-cyan-400 font-bold" id="fps-display">60</strong></span>
+            </div>
+          </div>
+
+          <!-- Live Canvas Container -->
+          <div class="relative w-full aspect-[4/3] bg-[#070b14] rounded-xl overflow-hidden border border-slate-800/90 shadow-inner flex items-center justify-center">
+            <canvas id="live-canvas" width="640" height="480" class="w-full h-full object-contain"></canvas>
+
+            <!-- Overlay Click Ripple -->
+            <div id="click-ripple" class="absolute pointer-events-none rounded-full border-2 border-emerald-400/90 bg-emerald-400/20 hidden transition-all duration-300"></div>
+
+            <!-- Toast / Notification Banner over Canvas -->
+            <div id="canvas-toast" class="absolute top-4 bg-slate-900/95 border border-emerald-500/50 text-emerald-300 px-3 py-1.5 rounded-lg text-xs font-mono shadow-xl hidden transition-all flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span id="canvas-toast-msg">文字辨識成功</span>
+            </div>
+          </div>
+
+          <!-- Visual Legend -->
+          <div class="flex items-center justify-between flex-wrap gap-3 pt-1 text-[11px] text-slate-400">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm border border-dashed border-cyan-400 bg-cyan-500/20 inline-block"></span>
+                <span>ROI 監控範圍</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm border border-emerald-400 bg-emerald-500/30 inline-block"></span>
+                <span>OCR 命中文字框</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full border border-amber-400 bg-transparent flex items-center justify-center text-[8px] text-amber-400 font-bold">＋</span>
+                <span>高對比瞄準準心</span>
+              </div>
+            </div>
+            <span class="text-slate-500">支援鍵盤快捷鍵 F8 隨時中斷</span>
+          </div>
+        </div>
+
+        <!-- Terminal Log Viewer -->
+        <div class="bg-[#0b0f19] border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-2">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-slate-300 font-semibold">
+              <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
+              <span>即時事件終端 (Activity Log)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="clearLogs()" class="text-slate-500 hover:text-slate-300 text-[11px] transition">清空日誌</button>
+              <span class="text-slate-700">|</span>
+              <span class="text-emerald-400 font-mono text-[10px]">自動捲動: 開啟</span>
+            </div>
+          </div>
+          
+          <div id="terminal-logs" class="h-32 bg-black/50 border border-slate-900 rounded-lg p-2.5 font-mono text-xs overflow-y-auto flex flex-col gap-1 text-slate-400">
+            <!-- Initial Log Entries -->
+            <div><span class="text-slate-600">[10:09:42]</span> <span class="text-emerald-400 font-bold">[INFO]</span> <span class="text-slate-300">RapidOCR ONNX 模型初始化完畢，支援中英繁簡即時辨識。</span></div>
+            <div><span class="text-slate-600">[10:09:43]</span> <span class="text-cyan-400 font-bold">[INIT]</span> <span class="text-slate-300">全域安全快速鍵 F8 監聽器註冊完成 (Win32 Keyboard Hook)。</span></div>
+            <div><span class="text-slate-600">[10:09:44]</span> <span class="text-amber-400 font-bold">[READY]</span> <span class="text-slate-300">滑鼠控制器就緒，點擊精確度校準為 0 像素偏移。</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Quickstart & Documentation Section -->
+    <section class="mt-4 p-6 rounded-2xl bg-[#111927]/90 border border-slate-800 flex flex-col gap-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="book-open" class="w-5 h-5 text-emerald-400"></i>
+            <span>如何在本機快速啟動 auto-grab 桌面程式</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">免複雜環境設定，一鍵即可執行包含圖形化介面之本機完整程式</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="https://github.com/feynmanwen/auto-grab/blob/main/README.md" target="_blank" class="text-xs text-emerald-400 hover:text-emerald-300 underline font-medium">查看 README.md 手冊</a>
+          <span class="text-slate-600">•</span>
+          <a href="https://github.com/feynmanwen/auto-grab/blob/main/PRD.md" target="_blank" class="text-xs text-cyan-400 hover:text-cyan-300 underline font-medium">查看 PRD 產品需求規格</a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-2">
+          <div class="font-semibold text-emerald-400 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center font-mono">1</span>
+            <span>方式一：直接雙擊批次檔（最簡單）</span>
+          </div>
+          <p class="text-slate-400">直接雙擊專案目錄下的 <code class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">run.bat</code> 即可立即喚起 PySide6 視覺化主視窗與瞄準準心。</p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-2">
+          <div class="font-semibold text-cyan-400 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center font-mono">2</span>
+            <span>方式二：Python 命令列啟動</span>
+          </div>
+          <div class="bg-black/60 p-2 rounded-lg font-mono text-slate-300 text-[11px] overflow-x-auto">
+            cd c:\Users\feynman\Desktop\AIA\Project\自動點選<br>
+            .\.venv\Scripts\python.exe main.py
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div>
+        auto-grab © 2026 by <a href="https://github.com/feynmanwen" class="text-slate-400 hover:text-white underline">feynmanwen</a>. All rights reserved.
+      </div>
+      <div class="flex items-center gap-4 text-slate-400 font-mono text-[11px]">
+        <span>RapidOCR ONNX Engine</span>
+        <span>•</span>
+        <span>PySide6 Desktop Core</span>
+        <span>•</span>
+        <span>GitHub Pages Live</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification Popup / Alert Modal -->
+  <div id="copy-toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 hidden transform transition-all duration-300">
+    <i data-lucide="check" class="w-4 h-4"></i>
+    <span>已成功複製指令至剪貼簿！</span>
+  </div>
+
+  <!-- JavaScript Simulator & Interactive Engine -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // App State
+    let currentMode = 'single'; // 'single' | 'batch'
+    let isRunning = false;
+    let clickCount = 0;
+    let animId = null;
+    let lastScanTime = 0;
+    let scanInterval = 1200; // ms
+    let currentSceneIdx = 0;
+    let mousePos = { x: 320, y: 240 };
+    let targetPos = { x: 320, y: 240 };
+    let crosshairTarget = null;
+    let scanLineY = 0;
+    let scanDir = 1;
+    let batchStep = 1;
+
+    // ROI Rectangle
+    let roi = { x: 120, y: 100, w: 440, h: 280 };
+
+    // Mock Scenes with text buttons
+    const scenes = [
+      {
+        name: '場景: 領券搶拍系統',
+        bg: '#0f172a',
+        windowTitle: 'E-Commerce Flash Sale Assistant v2.4',
+        items: [
+          { text: '限時限量 500 張折價券', x: 230, y: 140, type: 'label', color: '#94a3b8' },
+          { text: '立即領取', x: 270, y: 200, w: 140, h: 42, type: 'button', bg: '#10b981', color: '#ffffff', match: true },
+          { text: '稍後再說', x: 430, y: 205, w: 90, h: 32, type: 'button', bg: '#334155', color: '#94a3b8' },
+          { text: '庫存餘額: 12 / 500', x: 270, y: 270, type: 'label', color: '#64748b' }
+        ]
+      },
+      {
+        name: '場景: 系統更新與權限確認',
+        bg: '#090d16',
+        windowTitle: 'Windows Security & Permission Prompt',
+        items: [
+          { text: '即將安裝安全修補套件 (KB-502891)', x: 220, y: 140, type: 'label', color: '#e2e8f0' },
+          { text: '確定', x: 280, y: 220, w: 100, h: 38, type: 'button', bg: '#0284c7', color: '#ffffff', match: true },
+          { text: '取消', x: 400, y: 220, w: 90, h: 38, type: 'button', bg: '#334155', color: '#94a3b8' },
+          { text: '此操作將重新整理背景守護程式', x: 240, y: 285, type: 'label', color: '#64748b' }
+        ]
+      },
+      {
+        name: '場景: 企業內部單據簽核審批',
+        bg: '#0d131f',
+        windowTitle: 'Enterprise ERP Approval Workflow',
+        items: [
+          { text: '採購單號 #PO-202609-0881', x: 230, y: 140, type: 'label', color: '#38bdf8' },
+          { text: '送出', x: 260, y: 215, w: 110, h: 40, type: 'button', bg: '#10b981', color: '#ffffff', match: true },
+          { text: '退回修改', x: 390, y: 215, w: 110, h: 40, type: 'button', bg: '#e11d48', color: '#ffffff' },
+          { text: '經理複核通過 (預估金額: $4,800)', x: 230, y: 280, type: 'label', color: '#64748b' }
+        ]
+      },
+      {
+        name: '場景: 批次多步驟登入流程',
+        bg: '#0f172a',
+        windowTitle: 'Single-Sign-On Authorization Portal',
+        items: [
+          { text: '帳號: admin@company.internal', x: 220, y: 130, type: 'label', color: '#94a3b8' },
+          { text: '登入', x: 250, y: 175, w: 100, h: 36, type: 'button', bg: '#10b981', color: '#ffffff', step: 1, match: true },
+          { text: '同意', x: 370, y: 175, w: 90, h: 36, type: 'button', bg: '#6366f1', color: '#ffffff', step: 2, match: true },
+          { text: '立即領取', x: 250, y: 235, w: 120, h: 36, type: 'button', bg: '#f59e0b', color: '#ffffff', step: 3, match: true },
+          { text: '確定', x: 390, y: 235, w: 90, h: 36, type: 'button', bg: '#0284c7', color: '#ffffff', step: 4, match: true }
+        ]
+      }
+    ];
+
+    // Setup Canvas
+    const canvas = document.getElementById('live-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Tab Switching
+    function switchMode(mode) {
+      currentMode = mode;
+      const tabSingle = document.getElementById('tab-single-mode');
+      const tabBatch = document.getElementById('tab-batch-mode');
+      const panelSingle = document.getElementById('panel-single-mode');
+      const panelBatch = document.getElementById('panel-batch-mode');
+
+      if (mode === 'single') {
+        tabSingle.className = "flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 bg-emerald-600 text-white shadow font-semibold transition";
+        tabBatch.className = "flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-slate-400 hover:text-white transition";
+        panelSingle.classList.remove('hidden');
+        panelBatch.classList.add('hidden');
+        addLog('[MODE]', '切換至 [單一區域監控模式]。');
+      } else {
+        tabBatch.className = "flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 bg-emerald-600 text-white shadow font-semibold transition";
+        tabSingle.className = "flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-slate-400 hover:text-white transition";
+        panelBatch.classList.remove('hidden');
+        panelSingle.classList.add('hidden');
+        currentSceneIdx = 3; // Switch to multi-step scene
+        document.getElementById('scene-badge').innerText = scenes[currentSceneIdx].name;
+        addLog('[MODE]', '切換至 [批次多步驟工作流模式]，載入 4 個步驟序列。');
+      }
+      resetBatchSteps();
+    }
+
+    function resetRoi() {
+      roi = { x: 120, y: 100, w: 440, h: 280 };
+      document.getElementById('roi-x').value = roi.x;
+      document.getElementById('roi-y').value = roi.y;
+      document.getElementById('roi-w').value = roi.w;
+      document.getElementById('roi-h').value = roi.h;
+      addLog('[ROI]', `ROI 區域已重設為居中範圍 (${roi.x}, ${roi.y}, ${roi.w}, ${roi.h})。`);
+    }
+
+    function updateRoiFromInputs() {
+      roi.x = parseInt(document.getElementById('roi-x').value) || 0;
+      roi.y = parseInt(document.getElementById('roi-y').value) || 0;
+      roi.w = parseInt(document.getElementById('roi-w').value) || 200;
+      roi.h = parseInt(document.getElementById('roi-h').value) || 150;
+      addLog('[ROI]', `自訂 ROI 座標更新: (${roi.x}, ${roi.y}, ${roi.w}, ${roi.h})。`);
+    }
+
+    function switchMockScene() {
+      currentSceneIdx = (currentSceneIdx + 1) % scenes.length;
+      document.getElementById('scene-badge').innerText = scenes[currentSceneIdx].name;
+      addLog('[SCENE]', `切換至模擬環境: ${scenes[currentSceneIdx].name}`);
+    }
+
+    function toggleAutomation() {
+      if (isRunning) {
+        stopAutomation();
+      } else {
+        startAutomation();
+      }
+    }
+
+    function startAutomation() {
+      isRunning = true;
+      document.getElementById('btn-toggle-text').innerText = '停止監控中...';
+      document.getElementById('btn-toggle-run').classList.replace('from-emerald-600', 'from-amber-600');
+      document.getElementById('btn-toggle-run').classList.replace('to-teal-500', 'to-amber-500');
+      
+      const statusPill = document.getElementById('system-status-pill');
+      statusPill.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-emerald-500 text-xs font-mono text-emerald-400 shadow-sm shadow-emerald-500/30";
+      document.getElementById('system-status-text').innerText = '持續偵測點選中 (RUNNING)';
+
+      addLog('[SYSTEM]', '背景監控 Worker 執行緒已啟動，輪詢間隔 1.2s。');
+    }
+
+    function stopAutomation() {
+      isRunning = false;
+      document.getElementById('btn-toggle-text').innerText = '啟動自動監控';
+      document.getElementById('btn-toggle-run').classList.replace('from-amber-600', 'from-emerald-600');
+      document.getElementById('btn-toggle-run').classList.replace('to-amber-500', 'to-teal-500');
+      
+      const statusPill = document.getElementById('system-status-pill');
+      statusPill.className = "flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-xs font-mono text-slate-400";
+      document.getElementById('system-status-text').innerText = '系統就緒 (Standby)';
+
+      addLog('[SYSTEM]', '監控循環已終止，Worker 復位。');
+    }
+
+    function emergencyStop() {
+      stopAutomation();
+      showToast('⚠️ 全域熱鍵 F8 觸發，已強制終止所有自動化點擊！');
+      addLog('[KILL-SWITCH]', '觸發全域緊急中止 (F8)。所有滑鼠控制權已交還使用者。');
+    }
+
+    // Keyboard listener for F8
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F8') {
+        e.preventDefault();
+        emergencyStop();
+      }
+    });
+
+    function resetBatchSteps() {
+      batchStep = 1;
+      for (let i = 1; i <= 4; i++) {
+        const row = document.getElementById(`step-row-${i}`);
+        const badge = row.querySelector('.step-status-badge');
+        if (i === 1) {
+          row.className = "p-2.5 rounded-lg bg-slate-900 border border-emerald-500/50 flex items-center justify-between text-xs transition";
+          badge.className = "step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300";
+          badge.innerText = "準備中";
+        } else {
+          row.className = "p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs transition";
+          badge.className = "step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400";
+          badge.innerText = "等待";
+        }
+      }
+    }
+
+    function triggerSingleScan() {
+      executeDetectionCycle(true);
+    }
+
+    function executeDetectionCycle(isManual = false) {
+      const scene = scenes[currentSceneIdx];
+      let matchedItem = null;
+
+      if (currentMode === 'single') {
+        const keywords = document.getElementById('target-keywords').value.split(',').map(s => s.trim().toLowerCase());
+        for (const item of scene.items) {
+          if (item.type === 'button') {
+            const isMatch = keywords.some(k => item.text.toLowerCase().includes(k));
+            if (isMatch) {
+              matchedItem = item;
+              break;
+            }
+          }
+        }
+      } else {
+        // Batch mode: look for item matching current batch step
+        for (const item of scene.items) {
+          if (item.step === batchStep) {
+            matchedItem = item;
+            break;
+          }
+        }
+      }
+
+      if (matchedItem) {
+        const targetCenterX = matchedItem.x + matchedItem.w / 2;
+        const targetCenterY = matchedItem.y + matchedItem.h / 2;
+        targetPos = { x: targetCenterX, y: targetCenterY };
+        crosshairTarget = { x: targetCenterX, y: targetCenterY, text: matchedItem.text };
+
+        // Simulate random high confidence
+        const conf = (0.96 + Math.random() * 0.038).toFixed(3);
+        const latency = Math.floor(45 + Math.random() * 25);
+        document.getElementById('metric-latency').innerText = `${latency} ms`;
+
+        // Update displayed coords
+        document.getElementById('target-coords-display').innerHTML = `準心座標: <strong class="text-emerald-400">(X: ${Math.round(targetCenterX)}, Y: ${Math.round(targetCenterY)})</strong>`;
+
+        addLog('[OCR]', `命中目標關鍵字 "${matchedItem.text}" 於 (${Math.round(targetCenterX)}, ${Math.round(targetCenterY)})，信心度 ${conf}，耗時 ${latency}ms`);
+        
+        // Trigger Click Simulation
+        setTimeout(() => {
+          performClick(targetCenterX, targetCenterY, matchedItem.text);
+        }, 300);
+      } else {
+        addLog('[OCR]', `掃描 ROI (${roi.x}, ${roi.y}, ${roi.w}, ${roi.h}) 未發現目標文字，持續監聽...`);
+      }
+    }
+
+    function performClick(x, y, text) {
+      clickCount++;
+      document.getElementById('metric-clicks').innerText = clickCount;
+
+      // Ripple Effect on Canvas
+      const canvasRect = canvas.getBoundingClientRect();
+      const scaleX = canvasRect.width / canvas.width;
+      const scaleY = canvasRect.height / canvas.height;
+      const screenX = x * scaleX;
+      const screenY = y * scaleY;
+
+      const ripple = document.getElementById('click-ripple');
+      ripple.style.width = '60px';
+      ripple.style.height = '60px';
+      ripple.style.left = `${screenX - 30}px`;
+      ripple.style.top = `${screenY - 30}px`;
+      ripple.classList.remove('hidden');
+
+      setTimeout(() => {
+        ripple.classList.add('hidden');
+      }, 350);
+
+      const action = document.getElementById('mouse-action').value;
+      const actionName = action === 'double_click' ? '左鍵雙擊' : '左鍵單擊';
+      addLog('[MOUSE]', `滑鼠移動至 (${Math.round(x)}, ${Math.round(y)}) 執行 [${actionName}] 成功！`);
+      showToast(`🎯 命中 "${text}"，精準點擊成功！`);
+
+      if (currentMode === 'batch') {
+        advanceBatchStep();
+      }
+    }
+
+    function advanceBatchStep() {
+      const prevRow = document.getElementById(`step-row-${batchStep}`);
+      if (prevRow) {
+        prevRow.className = "p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/60 flex items-center justify-between text-xs transition";
+        const badge = prevRow.querySelector('.step-status-badge');
+        badge.className = "step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
+        badge.innerText = "✓ 完成";
+      }
+
+      batchStep++;
+      if (batchStep > 4) {
+        const isLoop = document.getElementById('batch-loop-toggle').checked;
+        if (isLoop) {
+          addLog('[BATCH]', '整批工作流 4 個步驟全數完成！等待 2.0 秒後自動循環下一輪...');
+          setTimeout(() => {
+            resetBatchSteps();
+          }, 2000);
+        } else {
+          addLog('[BATCH]', '整批工作流執行完畢，已安全停機。');
+          stopAutomation();
+        }
+      } else {
+        const nextRow = document.getElementById(`step-row-${batchStep}`);
+        if (nextRow) {
+          nextRow.className = "p-2.5 rounded-lg bg-slate-900 border border-emerald-500/50 flex items-center justify-between text-xs transition";
+          const badge = nextRow.querySelector('.step-status-badge');
+          badge.className = "step-status-badge text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300";
+          badge.innerText = "偵測中";
+        }
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('canvas-toast');
+      document.getElementById('canvas-toast-msg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2500);
+    }
+
+    function addLog(tag, message) {
+      const terminal = document.getElementById('terminal-logs');
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      
+      let tagColor = 'text-slate-400';
+      if (tag === '[OCR]') tagColor = 'text-emerald-400 font-bold';
+      else if (tag === '[MOUSE]') tagColor = 'text-cyan-400 font-bold';
+      else if (tag === '[SYSTEM]') tagColor = 'text-indigo-400 font-bold';
+      else if (tag === '[KILL-SWITCH]') tagColor = 'text-rose-400 font-bold';
+      else if (tag === '[BATCH]') tagColor = 'text-amber-400 font-bold';
+
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-slate-600">[${timeStr}]</span> <span class="${tagColor}">${tag}</span> <span class="text-slate-300">${message}</span>`;
+      terminal.appendChild(entry);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('terminal-logs').innerHTML = '';
+      addLog('[INFO]', '日誌已清空。');
+    }
+
+    function copyCloneCommand() {
+      const cmd = "git clone https://github.com/feynmanwen/auto-grab.git";
+      navigator.clipboard.writeText(cmd).then(() => {
+        const toast = document.getElementById('copy-toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2500);
+      });
+    }
+
+    // Animation & Canvas Render Loop
+    function render(timestamp) {
+      // Clear Canvas
+      ctx.fillStyle = '#070b14';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const scene = scenes[currentSceneIdx];
+
+      // 1. Draw Mock Window Frame
+      ctx.fillStyle = '#101827';
+      ctx.fillRect(40, 30, 560, 420);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(40, 30, 560, 420);
+
+      // Window Title Bar
+      ctx.fillStyle = '#0b1120';
+      ctx.fillRect(40, 30, 560, 32);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '12px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(scene.windowTitle, 55, 51);
+
+      // Window Control Dots
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(575, 46, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(560, 46, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(545, 46, 4, 0, Math.PI * 2); ctx.fill();
+
+      // 2. Draw Scene Items
+      for (const item of scene.items) {
+        if (item.type === 'label') {
+          ctx.fillStyle = item.color || '#94a3b8';
+          ctx.font = '14px "Plus Jakarta Sans", sans-serif';
+          ctx.fillText(item.text, item.x, item.y);
+        } else if (item.type === 'button') {
+          ctx.fillStyle = item.bg || '#3b82f6';
+          ctx.beginPath();
+          ctx.roundRect(item.x, item.y, item.w, item.h, 6);
+          ctx.fill();
+
+          ctx.fillStyle = item.color || '#ffffff';
+          ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.text, item.x + item.w / 2, item.y + item.h / 2 + 5);
+          ctx.textAlign = 'start';
+        }
+      }
+
+      // 3. Draw Translucent ROI Overlay
+      ctx.fillStyle = 'rgba(14, 165, 233, 0.08)';
+      ctx.fillRect(roi.x, roi.y, roi.w, roi.h);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(roi.x, roi.y, roi.w, roi.h);
+      ctx.setLineDash([]);
+
+      // Corner Anchors for ROI
+      const corners = [
+        [roi.x, roi.y],
+        [roi.x + roi.w, roi.y],
+        [roi.x, roi.y + roi.h],
+        [roi.x + roi.w, roi.y + roi.h]
+      ];
+      ctx.fillStyle = '#38bdf8';
+      for (const [cx, cy] of corners) {
+        ctx.fillRect(cx - 3, cy - 3, 6, 6);
+      }
+
+      // ROI Label
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText(`ROI: [${roi.x}, ${roi.y}, ${roi.w}, ${roi.h}]`, roi.x + 8, roi.y - 6);
+
+      // 4. Draw Scanning Laser Line if Running
+      if (isRunning) {
+        scanLineY += 2.5 * scanDir;
+        if (scanLineY > roi.h || scanLineY < 0) {
+          scanDir *= -1;
+        }
+        const curY = roi.y + scanLineY;
+        const grad = ctx.createLinearGradient(roi.x, curY, roi.x + roi.w, curY);
+        grad.addColorStop(0, 'rgba(16, 185, 129, 0)');
+        grad.addColorStop(0.5, 'rgba(16, 185, 129, 0.85)');
+        grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(roi.x, curY - 1.5, roi.w, 3);
+      }
+
+      // 5. Draw Target Bounding Box & Dual-Ring Reticle
+      if (crosshairTarget) {
+        const tx = crosshairTarget.x;
+        const ty = crosshairTarget.y;
+
+        // Bounding Box
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(tx - 65, ty - 20, 130, 40);
+
+        // Confidence Tag
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(tx - 65, ty - 34, 96, 14);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('OCR 命中: 98.4%', tx - 61, ty - 23);
+
+        // Dual-Ring High-Contrast Reticle (Signature Feature!)
+        // Outer dashed rotating ring
+        ctx.save();
+        ctx.translate(tx, ty);
+        const rot = (timestamp / 1000) * 1.5;
+        ctx.rotate(rot);
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.9)';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(0, 0, 24, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Inner solid ring
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(tx, ty, 10, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Extended Crosshair Arms
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.5;
+        // Horizontal
+        ctx.beginPath();
+        ctx.moveTo(tx - 38, ty); ctx.lineTo(tx - 12, ty);
+        ctx.moveTo(tx + 12, ty); ctx.lineTo(tx + 38, ty);
+        // Vertical
+        ctx.moveTo(tx, ty - 38); ctx.lineTo(tx, ty - 12);
+        ctx.moveTo(tx, ty + 12); ctx.lineTo(tx, ty + 38);
+        ctx.stroke();
+
+        // Center dot
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(tx, ty, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Coords watermark tag
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(tx + 14, ty + 14, 88, 16);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.strokeRect(tx + 14, ty + 14, 88, 16);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '10px monospace';
+        ctx.fillText(`(${Math.round(tx)}, ${Math.round(ty)})`, tx + 18, ty + 26);
+      }
+
+      // 6. Smooth Mouse Cursor Lerp
+      mousePos.x += (targetPos.x - mousePos.x) * 0.12;
+      mousePos.y += (targetPos.y - mousePos.y) * 0.12;
+
+      // Draw Simulated Mouse Cursor (Arrow)
+      ctx.save();
+      ctx.translate(mousePos.x, mousePos.y);
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 16);
+      ctx.lineTo(4, 12);
+      ctx.lineTo(8, 18);
+      ctx.lineTo(11, 16);
+      ctx.lineTo(7, 10);
+      ctx.lineTo(13, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // 7. Automation Periodic Trigger
+      if (isRunning && timestamp - lastScanTime > scanInterval) {
+        lastScanTime = timestamp;
+        executeDetectionCycle();
+      }
+
+      animId = requestAnimationFrame(render);
+    }
+
+    // Start Animation Loop
+    animId = requestAnimationFrame(render);
+  </script>
+</body>
+</html>
