@@ -163,18 +163,25 @@ class BatchStepDialog(QDialog):
 
     def _start_roi_selection(self):
         """
-        透過將視窗透明度暫時設為 0.0，使背景畫面完整露出，
-        並以模態方式啟動全螢幕框選對話框，不受父層模態阻擋。
+        隱藏本視窗與父視窗以露出完整螢幕背景，啟動全螢幕框選對話框。
+        框選完成或取消後復原顯示並置頂啟用。
         """
-        self.setWindowOpacity(0.0)
-        overlay = ROISelectorOverlay(self)
+        parent_win = self.parent()
+        if parent_win and hasattr(parent_win, "hide"):
+            parent_win.hide()
+        self.hide()
+
+        overlay = ROISelectorOverlay(None)
         if overlay.exec() == QDialog.DialogCode.Accepted:
             x, y, w, h = overlay.get_roi()
             self.spin_x.setValue(x)
             self.spin_y.setValue(y)
             self.spin_w.setValue(w)
             self.spin_h.setValue(h)
-        self.setWindowOpacity(1.0)
+
+        if parent_win and hasattr(parent_win, "show"):
+            parent_win.show()
+        self.show()
         self.raise_()
         self.activateWindow()
 

@@ -423,8 +423,10 @@ class MainWindow(QMainWindow):
     def _display_preview_image(self, pil_image: Image.Image):
         """將 PIL Image 等比縮放並清晰顯示在 lbl_preview"""
         try:
-            qim = ImageQt.ImageQt(pil_image)
-            pixmap = QPixmap.fromImage(qim)
+            rgb_img = pil_image.convert("RGB")
+            data = rgb_img.tobytes("raw", "RGB")
+            qim = QImage(data, rgb_img.width, rgb_img.height, rgb_img.width * 3, QImage.Format.Format_RGB888)
+            pixmap = QPixmap.fromImage(qim.copy())
             scaled = pixmap.scaled(
                 self.lbl_preview.size(),
                 Qt.AspectRatioMode.KeepAspectRatio,
@@ -435,8 +437,8 @@ class MainWindow(QMainWindow):
             print(f"Error displaying preview: {e}")
 
     def _start_roi_selection(self):
-        self.setWindowOpacity(0.0)
-        overlay = ROISelectorOverlay(self)
+        self.hide()
+        overlay = ROISelectorOverlay(None)
         if overlay.exec() == QDialog.DialogCode.Accepted:
             x, y, w, h = overlay.get_roi()
             self.spin_roi_x.setValue(x)
@@ -448,7 +450,7 @@ class MainWindow(QMainWindow):
             self._refresh_roi_preview()
         else:
             self._append_log("取消框選 ROI 區域", "info")
-        self.setWindowOpacity(1.0)
+        self.show()
         self.raise_()
         self.activateWindow()
 
@@ -570,8 +572,8 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "提示", "請先點選欲重新框選的步驟！")
             return
         step = self.config.batch_steps[row]
-        self.setWindowOpacity(0.0)
-        overlay = ROISelectorOverlay(self)
+        self.hide()
+        overlay = ROISelectorOverlay(None)
         if overlay.exec() == QDialog.DialogCode.Accepted:
             x, y, w, h = overlay.get_roi()
             step.roi_x, step.roi_y, step.roi_w, step.roi_h = x, y, w, h
@@ -581,7 +583,7 @@ class MainWindow(QMainWindow):
             self._append_log(f"📐 步驟 {row + 1}「{step.name}」ROI 更新為 ({x}, {y}, {w}x{h})", "success")
         else:
             self._append_log("取消重新框選批次 ROI", "info")
-        self.setWindowOpacity(1.0)
+        self.show()
         self.raise_()
         self.activateWindow()
 

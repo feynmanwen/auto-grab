@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from PySide6.QtCore import QThread, Signal
 
 from app.config import AppConfig, BatchStep
-from app.core.screen_capture import capture_roi
+from app.core.screen_capture import capture_roi, ensure_desktop_access
 from app.core.ocr_engine import OCREngine, OCRMatchResult
 from app.core.mouse_controller import MouseController
 import pyautogui
@@ -78,6 +78,7 @@ class AutoClickWorker(QThread):
 
     def run(self):
         self._is_running = True
+        ensure_desktop_access()
         self.log_signal.emit("🚀 開始單一區域文字偵測點選監控...", "info")
         self.status_signal.emit("監控中...")
 
@@ -97,7 +98,10 @@ class AutoClickWorker(QThread):
                     continue
 
                 phys_origin = (phys_rect[0], phys_rect[1])
-                offset = (self.config.click_offset_x, self.config.click_offset_y)
+                offset = (
+                    int(round(self.config.click_offset_x * self.dpr)),
+                    int(round(self.config.click_offset_y * self.dpr))
+                )
 
                 start_time = time.time()
                 match_result: Optional[OCRMatchResult] = self.ocr_engine.find_target_keyword(
@@ -223,6 +227,7 @@ class BatchWorkflowWorker(QThread):
 
     def run(self):
         self._is_running = True
+        ensure_desktop_access()
         total_steps = len(self.steps)
         if total_batch := total_steps:
             self.log_signal.emit(f"⚡ 開始執行批次工作流 (共 {total_batch} 個步驟)...", "info")
@@ -276,7 +281,10 @@ class BatchWorkflowWorker(QThread):
                             continue
 
                         phys_origin = (phys_rect[0], phys_rect[1])
-                        offset = (step.click_offset_x, step.click_offset_y)
+                        offset = (
+                            int(round(step.click_offset_x * self.dpr)),
+                            int(round(step.click_offset_y * self.dpr))
+                        )
 
                         match_result = self.ocr_engine.find_target_keyword(
                             image=img,

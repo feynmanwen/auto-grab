@@ -99,6 +99,10 @@ class TestScreenOCRAutoClicker(unittest.TestCase):
         expected_h = int(round(100 * dpr))
         self.assertEqual(phys_rect[2], expected_w)
         self.assertEqual(phys_rect[3], expected_h)
+        # 驗證絕非全黑假畫面
+        extrema = img.getextrema()
+        has_non_zero = any(ch[1] > 0 for ch in extrema)
+        self.assertTrue(has_non_zero, "螢幕擷取應為真實非純黑影像")
 
 
 if __name__ == "__main__":

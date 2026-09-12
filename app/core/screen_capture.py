@@ -14,6 +14,24 @@ except ImportError:
     QImage = None
 
 
+def ensure_desktop_access():
+    """
+    確保目前執行緒連結至 Windows 使用中的互動式桌面 (Input Desktop)，
+    使 GDI / BitBlt 具備擷取真實螢幕的存取權限。
+    """
+    try:
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenInputDesktop(0, False, 0x01FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+    except Exception:
+        pass
+
+
+# 模組載入時嘗試連結目前執行緒至互動桌面
+ensure_desktop_access()
+
+
 def get_screen_scale_factor() -> float:
     """
     獲取系統主螢幕的 DPI 縮放比例 (例如 1.0, 1.25, 1.5, 2.0)。
@@ -21,6 +39,7 @@ def get_screen_scale_factor() -> float:
     if QGuiApplication is not None:
         app = QApplication.instance()
         if app is None:
+            ensure_desktop_access()
             app = QApplication([])
         screen = QGuiApplication.primaryScreen()
         if screen:
@@ -53,35 +72,26 @@ def capture_roi(
     phys_w = int(round(roi_w * dpr))
     phys_h = int(round(roi_h * dpr))
 
-    # 1. 優先使用 Qt 原生 QScreen.grabWindow (高 DPI 零失真、避開 BitBlt 權限阻擋)
-    if QGuiApplication is not None:
-        try:
-            screen = QGuiApplication.primaryScreen()
-            if screen:
-                pixmap = screen.grabWindow(0, roi_x, roi_y, roi_w, roi_h)
-                if not pixmap.isNull():
-                    qimg = pixmap.toImage().convertToFormat(QImage.Format.Format_RGB888)
-                    width = qimg.width()
-                    height = qimg.height()
-                    ptr = qimg.bits()
-                    img = Image.frombuffer("RGB", (width, height), ptr, "raw", "RGB", 0, 1)
-                    return img, (phys_x, phys_y, width, height)
-        except Exception:
-            pass
+    # 確保當前執行緒具有桌面存取權限
+    ensure_desktop_access()
 
-    # 2. 次選方案：使用 PIL.ImageGrab
     bbox = (phys_x, phys_y, phys_x + phys_w, phys_y + phys_h)
+
+    # 1. 優先方案：使用 PIL.ImageGrab
     try:
         img = ImageGrab.grab(bbox=bbox)
         if img:
             return img, (phys_x, phys_y, phys_w, phys_h)
     except Exception:
-        try:
-            img = ImageGrab.grab(bbox=bbox, all_screens=True)
-            if img:
-                return img, (phys_x, phys_y, phys_w, phys_h)
-        except Exception:
-            pass
+        pass
+
+    # 2. 次選方案：跨多螢幕 PIL.ImageGrab
+    try:
+        img = ImageGrab.grab(bbox=bbox, all_screens=True)
+        if img:
+            return img, (phys_x, phys_y, phys_w, phys_h)
+    except Exception:
+        pass
 
     # 3. 備援方案：使用 mss 擷取
     try:
