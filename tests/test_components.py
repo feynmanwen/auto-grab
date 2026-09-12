@@ -12,10 +12,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import AppConfig
 from app.core.ocr_engine import OCREngine
-from app.core.screen_capture import get_screen_scale_factor, capture_roi, ensure_desktop_access
+from app.core.screen_capture import get_screen_scale_factor, capture_roi
 from app.core.mouse_controller import MouseController
-
-ensure_desktop_access()
 
 
 class TestScreenOCRAutoClicker(unittest.TestCase):

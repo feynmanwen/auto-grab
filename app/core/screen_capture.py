@@ -14,25 +14,6 @@ except ImportError:
     QImage = None
 
 
-def ensure_desktop_access():
-    """
-    確保目前執行緒連結至 Windows 使用中的互動式桌面 (Input Desktop)，
-    使 GDI / BitBlt 具備擷取真實螢幕的存取權限。
-    必須在該執行緒建立任何 GUI 視窗物件前呼叫。
-    """
-    try:
-        user32 = ctypes.windll.user32
-        hdesk = user32.OpenInputDesktop(0, False, 0x01FF)
-        if hdesk:
-            user32.SetThreadDesktop(hdesk)
-    except Exception:
-        pass
-
-
-# 模組載入時立即在主執行緒執行一次
-ensure_desktop_access()
-
-
 def get_screen_scale_factor() -> float:
     """
     獲取系統主螢幕的 DPI 縮放比例 (例如 1.0, 1.25, 1.5, 2.0)。
@@ -40,7 +21,6 @@ def get_screen_scale_factor() -> float:
     if QGuiApplication is not None:
         app = QApplication.instance()
         if app is None:
-            ensure_desktop_access()
             app = QApplication([])
         screen = QGuiApplication.primaryScreen()
         if screen:

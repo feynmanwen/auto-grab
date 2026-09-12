@@ -10,9 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import AppConfig, BatchStep
 from app.core.worker import draw_crosshair_marker, BatchWorkflowWorker
-from app.core.screen_capture import capture_roi, get_screen_scale_factor, ensure_desktop_access
-
-ensure_desktop_access()
+from app.core.screen_capture import capture_roi, get_screen_scale_factor
 
 
 class TestBatchMode(unittest.TestCase):
